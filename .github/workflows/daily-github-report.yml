@@ -2,7 +2,7 @@ name: Daily GitHub Report
 
 on:
   schedule:
-    - cron: '0 21 * * *'  # 18:00 BRT = 21:00 UTC
+    - cron: '0 5 * * *'  # 00:00 BRT (Brasília) = 04:00 UTC
   workflow_dispatch:  # Permite execução manual
 
 jobs:
@@ -25,8 +25,8 @@ jobs:
 
     - name: Run GitHub Daily Reporter
       env:
-        GITHUB_USER: ${{ secrets.GH_USER }}
-        GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+        GH_USER: ${{ secrets.GH_USER }}
+        GH_TOKEN: ${{ secrets.GH_TOKEN }}
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
       run: python github_daily.py
