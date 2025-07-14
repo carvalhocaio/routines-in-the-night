@@ -81,41 +81,39 @@ class GitHubDailyReporter:
         events_summary = json.dumps(events, indent=2)
 
         prompt = f"""
-        Com base nos seguintes eventos do GitHub das últimas 24 horas, crie uma mensagem para Twitter
-        como se fosse um diário de bordo de desenvolvedor. A mensagem deve ser:
-        - Máximo 280 caracteres
-        - Casual e engajante
-        - Focar nos pontos mais importantes
+            Você é um assistente que recebe as atividades feitas no GitHub hoje, incluindo ações em
+            repositórios privados. Com base nelas, gere um breve resumo em texto corrido:
 
-        Eventos:
-        {events_summary}
+            - Sem emojis  
+            - Sem hashtags  
+            - Nada clichê ou genérico  
+            - Max 280 caracteres (para caber no Twitter)  
 
-        Mensagem:
-        """
+            Atividades do dia:
+            {events_summary}
+        """.strip()
+
 
         try:
             client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
             response = client.chat.completions.create(
-                model="gpt-3.5-turbo",
+                model="gpt-4.1",
                 messages=[
                     {
                         "role": "system",
-                        "content": "Você é um desenvolvedor experiente criando posts para Twitter sobre sua atividade de programação.",
+                        "content": "Você é um desenvolvedor experiente criando posts para o Twitter (X) sobre sua atividade de programação.",
                     },
                     {"role": "user", "content": prompt},
                 ],
                 max_tokens=150,
-                temperature=0.7,
+                temperature=1.0,
             )
 
             return response.choices[0].message.content.strip()
         except Exception as e:
             print(f"⚠️ Erro na OpenAI: {str(e)}")
-            return f"""
-                🔧 Trabalhando em projetos interessantes hoje!\n
-                {len(events)} atividades no GitHub
-            """
+            return f"🔧 Trabalhando em projetos interessantes hoje! {len(events)} atividades no GitHub"
 
     def send_to_discord(self, message):
         """Envia mensagem para Discord via webhook"""
