@@ -25,8 +25,8 @@ jobs:
 
     - name: Run GitHub Daily Reporter
       env:
-        GITHUB_USER: ${{ secrets.GITHUB_USER }}
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_USER: ${{ secrets.GH_USER }}
+        GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
       run: python github_daily.py
