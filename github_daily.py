@@ -9,8 +9,8 @@ load_dotenv()
 
 class GitHubDailyReporter:
     def __init__(self):
-        self.github_user = os.getenv('GITHUB_USER')
-        self.github_token = os.getenv('GITHUB_TOKEN')
+        self.github_user = os.getenv('GH_USER')
+        self.github_token = os.getenv('GH_TOKEN')
         self.discord_webhook = os.getenv('DISCORD_WEBHOOK_URL')
 
     def get_github_events(self):
