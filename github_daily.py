@@ -1,31 +1,34 @@
-import os
-import requests
 import json
+import os
 from datetime import datetime, timedelta
+from http import HTTPStatus
+
+import requests
 from dotenv import load_dotenv
 from openai import OpenAI
 
 load_dotenv()
 
+
 class GitHubDailyReporter:
     def __init__(self):
-        self.github_user = os.getenv('GH_USER')
-        self.github_token = os.getenv('GH_TOKEN')
-        self.discord_webhook = os.getenv('DISCORD_WEBHOOK_URL')
+        self.github_user = os.getenv("GH_USER")
+        self.github_token = os.getenv("GH_TOKEN")
+        self.discord_webhook = os.getenv("DISCORD_WEBHOOK_URL")
 
     def get_github_events(self):
         """Captura eventos do GitHub das últimas 24 horas."""
         headers = {
-            'Authorization': f'token {self.github_token}',
-            'Accept': 'application/vnd.github.v3+json'
+            "Authorization": f"token {self.github_token}",
+            "Accept": "application/vnd.github.v3+json",
         }
 
         # Eventos públicos e privados do usuário
-        url = f'https://api.github.com/users/{self.github_user}/events'
+        url = f"https://api.github.com/users/{self.github_user}/events"
         response = requests.get(url, headers=headers)
 
-        if response.status_code != 200:
-            raise Exception(f'Erro ao buscar eventos: {response.status_code}')
+        if response.status_code != HTTPStatus.OK:
+            raise Exception(f"Erro ao buscar eventos: {response.status_code}")
 
         events = response.json()
 
@@ -34,7 +37,9 @@ class GitHubDailyReporter:
         recent_events = []
 
         for event in events:
-            event_date = datetime.strptime(event['created_at'], '%Y-%m-%dT%H:%M:%SZ')
+            event_date = datetime.strptime(
+                event["created_at"], "%Y-%m-%dT%H:%M:%SZ"
+            )
             if event_date >= yesterday:
                 recent_events.append(event)
 
@@ -46,21 +51,23 @@ class GitHubDailyReporter:
 
         for event in events:
             event_info = {
-                'type': event['type'],
-                'repo': event['repo']['name'],
-                'created_at': event['created_at']
+                "type": event["type"],
+                "repo": event["repo"]["name"],
+                "created_at": event["created_at"],
             }
 
             # Adicionar detalhes específicos por tipo de evento
-            if event['type'] == 'PushEvent':
-                event_info['commits'] = len(event['payload']['commits'])
-                event_info['branch'] = event['payload']['ref'].replace('refs/heads/', '')
-            elif event['type'] == 'CreateEvent':
-                event_info['ref_type'] = event['payload']['ref_type']
-            elif event['type'] == 'IssuesEvent':
-                event_info['action'] = event['payload']['action']
-            elif event['type'] == 'PullRequestEvent':
-                event_info['action'] = event['payload']['action']
+            if event["type"] == "PushEvent":
+                event_info["commits"] = len(event["payload"]["commits"])
+                event_info["branch"] = event["payload"]["ref"].replace(
+                    "refs/heads/", ""
+                )
+            elif event["type"] == "CreateEvent":
+                event_info["ref_type"] = event["payload"]["ref_type"]
+            elif event["type"] == "IssuesEvent":
+                event_info["action"] = event["payload"]["action"]
+            elif event["type"] == "PullRequestEvent":
+                event_info["action"] = event["payload"]["action"]
 
             formatted_events.append(event_info)
 
@@ -87,45 +94,47 @@ class GitHubDailyReporter:
         """
 
         try:
-            client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+            client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
             response = client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[
-                    {"role": "system",
-                     "content": "Você é um desenvolvedor experiente criando posts para Twitter sobre sua atividade de programação."},
-                    {"role": "user", "content": prompt}
+                    {
+                        "role": "system",
+                        "content": "Você é um desenvolvedor experiente criando posts para Twitter sobre sua atividade de programação.",
+                    },
+                    {"role": "user", "content": prompt},
                 ],
                 max_tokens=150,
-                temperature=0.7
+                temperature=0.7,
             )
 
             return response.choices[0].message.content.strip()
         except Exception as e:
             print(f"⚠️ Erro na OpenAI: {str(e)}")
-            return f"🔧 Trabalhando em projetos interessantes hoje! {len(events)} atividades no GitHub #coding #developer"
-
+            return f"""
+                🔧 Trabalhando em projetos interessantes hoje!\n
+                {len(events)} atividades no GitHub
+            """
 
     def send_to_discord(self, message):
         """Envia mensagem para Discord via webhook"""
         embed = {
-            "title": "📅 Diário de Bordo - GitHub Daily",
+            "title": "📅 GitHub Daily",
             "description": message,
             "color": 0x7289DA,
             "timestamp": datetime.now().isoformat(),
-            "footer": {
-                "text": "GitHub Daily Reporter"
-            }
+            "footer": {"text": "GitHub Daily Reporter"},
         }
 
-        payload = {
-            "embeds": [embed]
-        }
+        payload = {"embeds": [embed]}
 
         response = requests.post(self.discord_webhook, json=payload)
 
-        if response.status_code != 204:
-            raise Exception(f'Erro ao enviar para Discord: {response.status_code}')
+        if response.status_code != HTTPStatus.NO_CONTENT:
+            raise Exception(
+                f"Erro ao enviar para Discord: {response.status_code}"
+            )
 
         return True
 
@@ -153,9 +162,11 @@ class GitHubDailyReporter:
 
             # Tentar enviar erro para Discord
             try:
-                self.send_to_discord(f"⚠️ Erro no GitHub Daily Reporter: {str(e)}")
-            except:
-                pass
+                self.send_to_discord(
+                    f"⚠️ Erro no GitHub Daily Reporter: {str(e)}"
+                )
+            except Exception as e:
+                print("Erro ao executar o envio da mensagem ao Discord")
 
 
 if __name__ == "__main__":
