@@ -93,7 +93,7 @@ class GitHubDailyReporter:
     def generate_twitter_message(self, events):
         """Gera mensagem para Twitter usando OpenAI"""
         if not events:
-            return "Hoje foi um dia de planejamento e reflexão no código! #coding #github #developer"
+            return "Hoje foi um dia de planejamento e reflexão no código."
 
         events_summary = json.dumps(events, indent=2)
 
@@ -104,7 +104,7 @@ class GitHubDailyReporter:
             - Sem emojis  
             - Sem hashtags  
             - Nada clichê ou genérico  
-            - Max 280 caracteres (para caber no Twitter)  
+            - Max 280 caracteres
 
             Atividades do dia:
             {events_summary}
@@ -119,7 +119,7 @@ class GitHubDailyReporter:
                 messages=[
                     {
                         "role": "system",
-                        "content": "Você é um desenvolvedor experiente criando posts para o Twitter (X) sobre sua atividade de programação.",
+                        "content": "Você é um desenvolvedor experiente criando textos sobre sua atividade de programação.",
                     },
                     {"role": "user", "content": prompt},
                 ],
