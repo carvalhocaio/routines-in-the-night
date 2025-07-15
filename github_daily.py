@@ -90,8 +90,7 @@ class GitHubDailyReporter:
 
         return formatted_events
 
-    def generate_twitter_message(self, events):
-        """Gera mensagem para Twitter usando OpenAI"""
+    def generate_daily_message(self, events):
         if not events:
             return "Hoje foi um dia de planejamento e reflexão no código."
 
@@ -163,13 +162,13 @@ class GitHubDailyReporter:
             print(f"Encontrados {len(formatted_events)} eventos")
 
             print("Gerando mensagem com OpenAI...")
-            twitter_message = self.generate_twitter_message(formatted_events)
+            daily_message = self.generate_daily_message(formatted_events)
 
             print("Enviando para Discord...")
-            self.send_to_discord(twitter_message)
+            self.send_to_discord(daily_message)
 
             print("Processo concluído com sucesso!")
-            print(f"Mensagem gerada: {twitter_message}")
+            print(f"Mensagem gerada: {daily_message}")
 
         except Exception as e:
             error_message = f"Erro no processo: {str(e)}"
