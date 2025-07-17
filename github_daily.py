@@ -103,7 +103,7 @@ class GitHubDailyReporter:
             - Sem emojis  
             - Sem hashtags  
             - Nada clichê ou genérico  
-            - Max 280 caracteres
+            - Máximo de 280 caracteres
 
             Atividades do dia:
             {events_summary}
@@ -123,7 +123,7 @@ class GitHubDailyReporter:
                     {"role": "user", "content": prompt},
                 ],
                 max_tokens=150,
-                temperature=1.0,
+                temperature=1.2,
             )
 
             return response.choices[0].message.content.strip()
