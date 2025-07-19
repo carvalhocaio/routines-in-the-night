@@ -98,15 +98,22 @@ class GitHubDailyReporter:
 
         prompt = f"""
             Você é um assistente que recebe as atividades feitas no GitHub hoje, incluindo ações em
-            repositórios privados. Com base nelas, gere um breve resumo em texto corrido:
+            repositórios privados. Com base nelas, gere um resumo detalhado em formato de parárafo:
 
-            - Sem emojis  
-            - Sem hashtags  
-            - Nada clichê ou genérico  
-            - Máximo de 280 caracteres
+            REQUISITOS:
+            - Texto em parágrafo corrido, com pelo menos 100-150 palavras
+            - Sem emojis e sem hashtags
+            - Seja específico sobre cada atividade realizada
+            - Mencione nomes dos repositórios, branches, e detalhes técnicos quando relevante
+            - Descreva o contexto e propósito das mudanças quando possível
+            - Use linguagem técnica mais acessível
+            - Evite frases genéricas como "dia produtivo" ou "muito trabalho"
+            - Conecte as atividades em uma narrativa coesa sobre o trabalho do dia
 
             Atividades do dia:
             {events_summary}
+
+            Gere um texto detalhado e informativo sobre essas atividades de desenvolvimento.
         """.strip()
 
 
@@ -122,7 +129,7 @@ class GitHubDailyReporter:
                     },
                     {"role": "user", "content": prompt},
                 ],
-                max_tokens=150,
+                max_tokens=300,
                 temperature=1.2,
             )
 
