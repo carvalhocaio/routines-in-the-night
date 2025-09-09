@@ -17,15 +17,22 @@ class GitHubDailyReporter:
         self.discord_webhook = os.getenv("DISCORD_WEBHOOK_URL")
 
     def get_github_events(self):
-        """Captura eventos do GitHub das últimas 24 horas (públicos e privados)."""
+        """Captura eventos do GitHub das últimas 24 horas (públicos e privados).
+        
+        Requer token GitHub com permissões:
+        - repo: acesso a repositórios públicos e privados
+        - user: informações do usuário
+        """
         headers = {
             "Authorization": f"Bearer {self.github_token}",
             "Accept": "application/vnd.github.v3+json",
             "X-GitHub-Api-Version": "2022-11-28"
         }
         
-        # Eventos do usuário autenticado (inclui privados)
+        # Usando endpoint /users/{username}/events para capturar eventos do usuário autenticado
+        # Com autenticação, deve retornar eventos públicos e privados
         url = f"https://api.github.com/users/{self.github_user}/events"
+        print(f"Fazendo request para: {url}")
         response = requests.get(url, headers=headers)
         response.raise_for_status()
         
@@ -34,9 +41,12 @@ class GitHubDailyReporter:
             return []
         
         all_events = response.json()
+        print(f"Total de eventos retornados pela API: {len(all_events)}")
 
         yesterday = datetime.now() - timedelta(hours=24)
         recent_events = []
+        public_repos = set()
+        private_repos = set()
 
         for event in all_events:
             try:
@@ -45,10 +55,22 @@ class GitHubDailyReporter:
                 )
                 if event_date >= yesterday:
                     recent_events.append(event)
+
+                    # Debug: contabilizar repos públicos vs privados
+                    repo_name = event["repo"]["name"]
+                    is_public = event.get("public", True)
+                    if is_public:
+                        public_repos.add(repo_name)
+                    else:
+                        private_repos.add(repo_name)
             except (KeyError, ValueError) as e:
                 print(f"Erro ao processar evento: {e}")
                 continue
 
+        print(f"Eventos das últimas 24h: {len(recent_events)}")
+        print(f"Repositórios públicos: {sorted(public_repos)}")
+        print(f"Repositórios privados: {sorted(private_repos)}")
+        
         recent_events.sort(key=lambda x: x["created_at"], reverse=True)
         return recent_events
 
