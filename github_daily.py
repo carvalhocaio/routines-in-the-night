@@ -18,7 +18,7 @@ class GitHubDailyReporter:
 
     def get_github_events(self):
         """Captura eventos do GitHub das últimas 24 horas (públicos e privados).
-        
+
         Requer token GitHub com permissões:
         - repo: acesso a repositórios públicos e privados
         - user: informações do usuário
@@ -26,20 +26,20 @@ class GitHubDailyReporter:
         headers = {
             "Authorization": f"Bearer {self.github_token}",
             "Accept": "application/vnd.github.v3+json",
-            "X-GitHub-Api-Version": "2022-11-28"
+            "X-GitHub-Api-Version": "2022-11-28",
         }
-        
+
         # Usando endpoint /users/{username}/events para capturar eventos do usuário autenticado
         # Com autenticação, deve retornar eventos públicos e privados
         url = f"https://api.github.com/users/{self.github_user}/events"
         print(f"Fazendo request para: {url}")
         response = requests.get(url, headers=headers)
         response.raise_for_status()
-        
+
         if response.status_code != HTTPStatus.OK:
             print(f"Erro ao buscar eventos do usuário: {response.status_code}")
             return []
-        
+
         all_events = response.json()
         print(f"Total de eventos retornados pela API: {len(all_events)}")
 
@@ -70,7 +70,7 @@ class GitHubDailyReporter:
         print(f"Eventos das últimas 24h: {len(recent_events)}")
         print(f"Repositórios públicos: {sorted(public_repos)}")
         print(f"Repositórios privados: {sorted(private_repos)}")
-        
+
         recent_events.sort(key=lambda x: x["created_at"], reverse=True)
         return recent_events
 
@@ -83,7 +83,7 @@ class GitHubDailyReporter:
                 "type": event["type"],
                 "repo": event["repo"]["name"],
                 "created_at": event["created_at"],
-                "is_private": event.get("public", True) == False
+                "is_private": event.get("public", True) == False,
             }
 
             if event["type"] == "PushEvent":
@@ -93,7 +93,8 @@ class GitHubDailyReporter:
                 )
                 if event["payload"]["commits"]:
                     event_info["commit_messages"] = [
-                        commit["message"] for commit in event["payload"]["commits"]
+                        commit["message"]
+                        for commit in event["payload"]["commits"]
                     ]
             elif event["type"] == "CreateEvent":
                 event_info["ref_type"] = event["payload"]["ref_type"]
@@ -103,7 +104,9 @@ class GitHubDailyReporter:
                 event_info["action"] = event["payload"]["action"]
             elif event["type"] == "PullRequestEvent":
                 event_info["action"] = event["payload"]["action"]
-                event_info["pr_title"] = event["payload"]["pull_request"]["title"]
+                event_info["pr_title"] = event["payload"]["pull_request"][
+                    "title"
+                ]
             elif event["type"] == "DeleteEvent":
                 event_info["ref_type"] = event["payload"]["ref_type"]
                 event_info["ref"] = event["payload"]["ref"]
@@ -137,7 +140,6 @@ class GitHubDailyReporter:
 
             Gere um texto detalhado e informativo sobre essas atividades de desenvolvimento.
         """.strip()
-
 
         try:
             client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
