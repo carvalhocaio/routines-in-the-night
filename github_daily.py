@@ -87,29 +87,29 @@ class GitHubDailyReporter:
             }
 
             if event["type"] == "PushEvent":
-                event_info["commits"] = len(event["payload"]["commits"])
-                event_info["branch"] = event["payload"]["ref"].replace(
+                commits = event["payload"].get("commits", [])
+                event_info["commits"] = len(commits)
+                event_info["branch"] = event["payload"].get("ref", "").replace(
                     "refs/heads/", ""
                 )
-                if event["payload"]["commits"]:
+                if commits:
                     event_info["commit_messages"] = [
                         commit["message"]
-                        for commit in event["payload"]["commits"]
+                        for commit in commits
                     ]
             elif event["type"] == "CreateEvent":
-                event_info["ref_type"] = event["payload"]["ref_type"]
+                event_info["ref_type"] = event["payload"].get("ref_type")
                 if "ref" in event["payload"]:
                     event_info["ref"] = event["payload"]["ref"]
             elif event["type"] == "IssuesEvent":
-                event_info["action"] = event["payload"]["action"]
+                event_info["action"] = event["payload"].get("action")
             elif event["type"] == "PullRequestEvent":
-                event_info["action"] = event["payload"]["action"]
-                event_info["pr_title"] = event["payload"]["pull_request"][
-                    "title"
-                ]
+                event_info["action"] = event["payload"].get("action")
+                pull_request = event["payload"].get("pull_request", {})
+                event_info["pr_title"] = pull_request.get("title")
             elif event["type"] == "DeleteEvent":
-                event_info["ref_type"] = event["payload"]["ref_type"]
-                event_info["ref"] = event["payload"]["ref"]
+                event_info["ref_type"] = event["payload"].get("ref_type")
+                event_info["ref"] = event["payload"].get("ref")
 
             formatted_events.append(event_info)
 
