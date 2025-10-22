@@ -153,14 +153,37 @@ class GitHubDailyReporter:
                     },
                     {"role": "user", "content": prompt},
                 ],
-                max_tokens=300,
+                max_tokens=500,
                 temperature=1.2,
             )
 
-            return response.choices[0].message.content.strip()
+            message = response.choices[0].message.content.strip()
+
+            # Discord embed description tem limite de 2000 caracteres
+            # Trunca no último ponto final se necessário
+            return self._truncate_message(message, max_length=2000)
         except Exception as e:
             print(f"Erro na OpenAI: {str(e)}")
             return f"Trabalhando em projetos interessantes hoje! {len(events)} atividades no GitHub"
+
+    def _truncate_message(self, message, max_length=2000):
+        """Trunca mensagem de forma inteligente respeitando o limite do Discord.
+
+        Discord webhooks têm limite de 2000 caracteres para embed description.
+        Trunca no último ponto final antes do limite para manter frases completas.
+        """
+        if len(message) <= max_length:
+            return message
+
+        # Encontra o último ponto final antes do limite
+        last_period = message.rfind(".", 0, max_length)
+
+        if last_period > 0:
+            # Trunca no último ponto final (inclui o ponto)
+            return message[:last_period + 1]
+        else:
+            # Se não encontrar ponto final, trunca direto no limite
+            return message[:max_length]
 
     def send_to_discord(self, message):
         """Envia mensagem para Discord via webhook"""
