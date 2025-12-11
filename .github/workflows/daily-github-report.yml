@@ -3,7 +3,7 @@ name: Daily GitHub Report
 on:
   schedule:
     - cron: '0 4 * * *'  # 00:00 BRT = 04:00 UTC
-  workflow_dispatch:  # Permite execução manual
+  workflow_dispatch:  # Allows manual execution.
 
 jobs:
   generate-report:
