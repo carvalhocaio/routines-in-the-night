@@ -9,7 +9,6 @@ A Go application that automatically generates daily summaries of your GitHub act
 - **Discord Integration**: Automatically posts daily reports to Discord channels via webhooks
 - **GitHub Actions Automation**: Runs daily at midnight (Brasília time) using GitHub Actions
 - **Clean Architecture**: Well-organized code structure following Go best practices
-- **Docker Support**: Containerized application for easy deployment
 - **Event Filtering**: Captures activities from the last 24 hours including:
   - Push events with commit details
   - Repository creation and deletion
@@ -20,7 +19,6 @@ A Go application that automatically generates daily summaries of your GitHub act
 ## Prerequisites
 
 - Go 1.23 or higher
-- Docker and Docker Compose (optional, for containerized deployment)
 - GitHub Personal Access Token
 - Google Gemini API Key
 - Discord Webhook URL
@@ -42,7 +40,7 @@ go mod download
 
 3. **Configure environment variables:**
 ```bash
-cp .env.example .env
+cp .env.sample .env
 ```
 
 Edit `.env` with your credentials:
@@ -50,16 +48,8 @@ Edit `.env` with your credentials:
 GH_USER=your_github_username
 GH_TOKEN=your_github_personal_access_token
 GEMINI_API_KEY=your_gemini_api_key
+GEMINI_MODEL=gemini-2.5-flash  # Optional, defaults to gemini-2.5-flash
 DISCORD_WEBHOOK_URL=your_discord_webhook_url
-```
-
-### Docker Setup
-
-1. **Configure environment variables** (same as above)
-
-2. **Build and run with Docker Compose:**
-```bash
-docker-compose up --build
 ```
 
 ## Configuration
@@ -98,12 +88,6 @@ Or directly:
 go run ./cmd/reporter/main.go
 ```
 
-### Docker Execution
-
-```bash
-docker-compose up
-```
-
 ### Automated Execution
 
 The project includes a GitHub Actions workflow that runs automatically every day at midnight (Brasília time).
@@ -136,11 +120,11 @@ To enable automation:
 │       └── client.go            # Discord webhook client
 ├── .github/
 │   └── workflows/
-│       └── daily-github-report.yml  # GitHub Actions workflow
-├── .env.example                 # Environment variables template
+│       ├── ci.yml                   # CI workflow (test, lint, build)
+│       └── daily-github-report.yml  # Daily report workflow
+├── .env.sample                  # Environment variables template
 ├── .gitignore                   # Git ignore rules
-├── docker-compose.yml           # Docker Compose configuration
-├── Dockerfile                   # Docker image definition
+├── .golangci.yml                # Linter configuration
 ├── go.mod                       # Go module definition
 ├── go.sum                       # Go module checksums
 ├── Makefile                     # Build automation
@@ -155,15 +139,16 @@ To enable automation:
 make help          # Show available commands
 make build         # Build the application
 make run           # Build and run
+make dev           # Run without building (go run)
 make test          # Run tests
 make coverage      # Generate coverage report
 make clean         # Clean build artifacts
-make docker-build  # Build Docker image
-make docker-run    # Run with Docker Compose
 make format        # Format code
 make lint          # Run linter
 make deps          # Download dependencies
 make tidy          # Tidy go.mod
+make update-deps   # Update dependencies
+make install       # Install binary
 ```
 
 ### Code Formatting
