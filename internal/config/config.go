@@ -7,11 +7,16 @@ import (
 	"github.com/joho/godotenv"
 )
 
+const (
+	defaultGeminiModel = "gemini-2.5-flash"
+)
+
 // Config holds all application configuration
 type Config struct {
 	GitHubUser        string
 	GitHubToken       string
 	GeminiAPIKey      string
+	GeminiModel       string
 	DiscordWebhookURL string
 }
 
@@ -20,10 +25,16 @@ func Load() (*Config, error) {
 	// Try to load .env file (ignore error if a file doesn't exist)
 	_ = godotenv.Load() //nolint:errcheck // .env file is optional
 
+	geminiModel := os.Getenv("GEMINI_MODEL")
+	if geminiModel == "" {
+		geminiModel = defaultGeminiModel
+	}
+
 	cfg := &Config{
 		GitHubUser:        os.Getenv("GH_USER"),
 		GitHubToken:       os.Getenv("GH_TOKEN"),
 		GeminiAPIKey:      os.Getenv("GEMINI_API_KEY"),
+		GeminiModel:       geminiModel,
 		DiscordWebhookURL: os.Getenv("DISCORD_WEBHOOK_URL"),
 	}
 
