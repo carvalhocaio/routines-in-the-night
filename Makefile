@@ -16,6 +16,10 @@ build: ## Build the application
 	@go build -v -o $(BINARY_NAME) $(MAIN_PATH)
 	@echo "Build complete: $(BINARY_NAME)"
 
+dev: ## Run the application without building
+	@echo "Running in development mode..."
+	@go run $(MAIN_PATH)/main.go
+
 run: build ## Build and run the application
 	@echo "Running $(BINARY_NAME)..."
 	@./$(BINARY_NAME)
@@ -35,14 +39,6 @@ clean: ## Clean build artifacts
 	@rm -f coverage.txt coverage.html
 	@go clean
 	@echo "Clean complete"
-
-docker-build: ## Build Docker image
-	@echo "Building Docker image..."
-	@docker build -t $(BINARY_NAME):latest .
-
-docker-run: docker-build ## Run Docker container
-	@echo "Running Docker container..."
-	@docker-compose up
 
 format: ## Format Go code
 	@echo "Formatting code..."
