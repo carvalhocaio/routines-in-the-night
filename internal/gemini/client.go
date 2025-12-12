@@ -45,7 +45,9 @@ func (c *Client) GenerateDailySummary(
 	if err != nil {
 		return "", fmt.Errorf("failed to create Gemini client: %w", err)
 	}
-	defer client.Close()
+	defer func() {
+		_ = client.Close() //nolint:errcheck // defer close is best effort
+	}()
 
 	// Configure the model
 	model := client.GenerativeModel(modelName)
