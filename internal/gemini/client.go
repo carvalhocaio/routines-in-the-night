@@ -12,7 +12,6 @@ import (
 )
 
 const (
-	modelName       = "gemini-2.5-flash"
 	maxTokens       = 8192
 	temperature     = 1.2
 	maxSummaryChars = 4096 // Discord embed description limit (max is 4096)
@@ -20,13 +19,15 @@ const (
 
 // Client handles Gemini API interactions
 type Client struct {
-	apiKey string
+	apiKey    string
+	modelName string
 }
 
 // NewClient creates a new Gemini API client
-func NewClient(apiKey string) *Client {
+func NewClient(apiKey, modelName string) *Client {
 	return &Client{
-		apiKey: apiKey,
+		apiKey:    apiKey,
+		modelName: modelName,
 	}
 }
 
@@ -50,7 +51,7 @@ func (c *Client) GenerateDailySummary(
 	}()
 
 	// Configure the model
-	model := client.GenerativeModel(modelName)
+	model := client.GenerativeModel(c.modelName)
 	model.SetTemperature(float32(temperature))
 	model.SetMaxOutputTokens(int32(maxTokens))
 
