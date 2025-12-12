@@ -57,7 +57,7 @@ type PullRequest struct {
 type FormattedEvent struct {
 	Type           string    `json:"type"`
 	Repo           string    `json:"repo"`
-	CreateAt       time.Time `json:"create_at"`
+	CreatedAt      time.Time `json:"created_at"`
 	IsPrivate      bool      `json:"is_private"`
 	Branch         string    `json:"branch,omitempty"`
 	Commits        int       `json:"commits,omitempty"`
@@ -144,7 +144,7 @@ func (c *Client) formatEvents(events []Event) []FormattedEvent {
 		fe := FormattedEvent{
 			Type:      events[i].Type,
 			Repo:      events[i].Repo.Name,
-			CreateAt:  events[i].CreatedAt,
+			CreatedAt: events[i].CreatedAt,
 			IsPrivate: !events[i].Public,
 		}
 
