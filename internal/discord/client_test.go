@@ -18,11 +18,12 @@ func TestNewClient(t *testing.T) {
 }
 
 func TestEmbedStructure(t *testing.T) {
+	timestamp := "2024-01-01T00:00:00Z"
 	embed := Embed{
 		Title:       "Test Title",
 		Description: "Test Description",
 		Color:       colorBlue,
-		Timestamp:   "2024-01-01T00:00:00Z",
+		Timestamp:   timestamp,
 		Footer: &EmbedFooter{
 			Text: "Test Footer",
 		},
@@ -36,6 +37,9 @@ func TestEmbedStructure(t *testing.T) {
 	}
 	if embed.Color != colorBlue {
 		t.Errorf("Expected Color=%d, got: %d", colorBlue, embed.Color)
+	}
+	if embed.Timestamp != timestamp {
+		t.Errorf("Expected Timestamp='%s', got: %s", timestamp, embed.Timestamp)
 	}
 	if embed.Footer.Text != "Test Footer" {
 		t.Errorf("Expected Footer.Text='Test Footer', got: %s", embed.Footer.Text)
@@ -63,13 +67,17 @@ func TestWebhookPayload(t *testing.T) {
 
 func TestErrorMessage(t *testing.T) {
 	testErr := errors.New("test error message")
+	expectedTitle := "GitHub Daily Reporter - Error"
 
 	embed := Embed{
-		Title:       "GitHub Daily Reporter - Error",
+		Title:       expectedTitle,
 		Description: testErr.Error(),
 		Color:       0xFF0000,
 	}
 
+	if embed.Title != expectedTitle {
+		t.Errorf("Expected Title='%s', got: %s", expectedTitle, embed.Title)
+	}
 	expectedDesc := "test error message"
 	if embed.Description != expectedDesc {
 		t.Errorf("Expected Description='%s', got: %s", expectedDesc, embed.Description)
