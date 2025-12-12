@@ -1,5 +1,6 @@
 package gemini
 
+//nolint:misspell // Portuguese text - "profissional" and "substancial" are correct Portuguese words
 const dailySummaryPromptTemplate = `Você é um assistente técnico que analisa atividades
 de desenvolvimento no GitHub. Gere um resumo TÉCNICO e DETALHADO em formato de parágrafo.
 
@@ -28,4 +29,4 @@ Extraia dos eventos:
 Atividades do dia:
 %s
 
-Gere um texto técnico, específico e informativo sobre o trabalho de desenvolvimento realizado.` //nolint:misspell // "informativo" is correct in Portuguese
+Gere um texto técnico, específico e informativo sobre o trabalho de desenvolvimento realizado.`
