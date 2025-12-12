@@ -90,9 +90,9 @@ func (c *Client) GetDailyEvents() ([]FormattedEvent, error) {
 	yesterday := time.Now().Add(-24 * time.Hour)
 	var recentEvents []Event
 
-	for _, event := range events {
-		if event.CreatedAt.After(yesterday) {
-			recentEvents = append(recentEvents, event)
+	for i := range events {
+		if events[i].CreatedAt.After(yesterday) {
+			recentEvents = append(recentEvents, events[i])
 		}
 	}
 
@@ -103,7 +103,7 @@ func (c *Client) GetDailyEvents() ([]FormattedEvent, error) {
 func (c *Client) fetchUserEvents() ([]Event, error) {
 	url := fmt.Sprintf("%s/users/%s/events", githubAPIURL, c.username)
 
-	req, err := http.NewRequest(http.MethodGet, url, nil)
+	req, err := http.NewRequest(http.MethodGet, url, http.NoBody)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
@@ -117,7 +117,9 @@ func (c *Client) fetchUserEvents() ([]Event, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close() //nolint:errcheck // defer close is best effort
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf(
@@ -138,37 +140,37 @@ func (c *Client) fetchUserEvents() ([]Event, error) {
 func (c *Client) formatEvents(events []Event) []FormattedEvent {
 	formatted := make([]FormattedEvent, 0, len(events))
 
-	for _, event := range events {
+	for i := range events {
 		fe := FormattedEvent{
-			Type:      event.Type,
-			Repo:      event.Repo.Name,
-			CreateAt:  event.CreatedAt,
-			IsPrivate: !event.Public,
+			Type:      events[i].Type,
+			Repo:      events[i].Repo.Name,
+			CreateAt:  events[i].CreatedAt,
+			IsPrivate: !events[i].Public,
 		}
 
-		switch event.Type {
+		switch events[i].Type {
 		case "PushEvent":
-			fe.Commits = len(event.Payload.Commits)
-			fe.Branch = extractBranchName(event.Payload.Ref)
+			fe.Commits = len(events[i].Payload.Commits)
+			fe.Branch = extractBranchName(events[i].Payload.Ref)
 
-			messages := make([]string, 0, len(event.Payload.Commits))
-			for _, commit := range event.Payload.Commits {
+			messages := make([]string, 0, len(events[i].Payload.Commits))
+			for _, commit := range events[i].Payload.Commits {
 				messages = append(messages, commit.Message)
 			}
 			fe.CommitMessages = messages
 
 		case "CreateEvent":
-			fe.RefType = event.Payload.RefType
-			fe.Ref = event.Payload.Ref
+			fe.RefType = events[i].Payload.RefType
+			fe.Ref = events[i].Payload.Ref
 
 		case "DeleteEvent":
-			fe.RefType = event.Payload.RefType
-			fe.Ref = event.Payload.Ref
+			fe.RefType = events[i].Payload.RefType
+			fe.Ref = events[i].Payload.Ref
 
 		case "IssuesEvent", "PullRequestEvent":
-			fe.Action = event.Payload.Action
-			if event.Payload.PullRequest != nil {
-				fe.PRTitle = event.Payload.PullRequest.Title
+			fe.Action = events[i].Payload.Action
+			if events[i].Payload.PullRequest != nil {
+				fe.PRTitle = events[i].Payload.PullRequest.Title
 			}
 		}
 
