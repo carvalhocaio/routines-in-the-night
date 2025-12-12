@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  reporter:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - GH_USER=${GH_USER}
+      - GH_TOKEN=${GH_TOKEN}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL}
+    restart: unless-stopped
