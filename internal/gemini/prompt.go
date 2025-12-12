@@ -13,6 +13,7 @@ REQUISITOS:
 - Use linguagem técnica mas acessível
 - Evite frases genéricas como "dia produtivo" ou "muito trabalho"
 - Conecte as atividades em uma narrativa coesa sobre o trabalho do dia
+- Descreva as atividades feitas no GitHub (review, pull request)
 
 Atividades do dia:
 %s
