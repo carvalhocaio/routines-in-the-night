@@ -13,9 +13,9 @@ import (
 
 const (
 	modelName       = "gemini-2.5-flash"
-	maxTokens       = 500
+	maxTokens       = 8192
 	temperature     = 1.2
-	maxSummaryChars = 2000 // Discord embed description limit
+	maxSummaryChars = 4096 // Discord embed description limit (max is 4096)
 )
 
 // Client handles Gemini API interactions
