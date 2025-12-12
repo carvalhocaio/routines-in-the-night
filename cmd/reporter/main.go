@@ -20,7 +20,7 @@ func main() {
 
 	// Initialize services
 	githubClient := github.NewClient(cfg.GitHubUser, cfg.GitHubToken)
-	geminiClient := gemini.NewClient(cfg.GeminiAPIKey)
+	geminiClient := gemini.NewClient(cfg.GeminiAPIKey, cfg.GeminiModel)
 	discordClient := discord.NewClient(cfg.DiscordWebhookURL)
 
 	// Execute the daily report workflow
@@ -53,7 +53,7 @@ func run(
 	log.Printf("Found %d events in the last 24 hours", len(events))
 
 	if len(events) == 0 {
-		log.Panicln("No events found, sending default message")
+		log.Println("No events found, sending default message")
 		return discordClient.SendDailyReport(
 			"Hoje foi um dia de planejamento e reflexão no código.",
 		)
