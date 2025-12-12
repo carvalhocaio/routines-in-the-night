@@ -9,7 +9,8 @@ import (
 )
 
 const (
-	colorBlue = 0x7289DA
+	colorBlue         = 0x7289DA
+	maxDescriptionLen = 4096 // Discord embed description limit
 )
 
 // Client handles Discord webhook interactions
@@ -51,7 +52,7 @@ func NewClient(webhookURL string) *Client {
 func (c *Client) SendDailyReport(message string) error {
 	embed := Embed{
 		Title:       "GitHub Daily",
-		Description: message,
+		Description: truncateMessage(message, maxDescriptionLen),
 		Color:       colorBlue,
 		Timestamp:   time.Now().Format(time.RFC3339),
 		Footer: &EmbedFooter{
@@ -60,6 +61,31 @@ func (c *Client) SendDailyReport(message string) error {
 	}
 
 	return c.sendEmbed(embed)
+}
+
+// truncateMessage ensures the message fits within Discord's limits
+// while preserving complete sentences
+func truncateMessage(message string, maxLength int) string {
+	if len(message) <= maxLength {
+		return message
+	}
+
+	// Find the last period before the limit
+	truncated := message[:maxLength]
+	lastPeriod := -1
+	for i := len(truncated) - 1; i >= 0; i-- {
+		if truncated[i] == '.' {
+			lastPeriod = i
+			break
+		}
+	}
+
+	if lastPeriod > 0 {
+		return message[:lastPeriod+1]
+	}
+
+	// No period found, truncate at limit
+	return truncated
 }
 
 // SendError sends an error message to Discord
