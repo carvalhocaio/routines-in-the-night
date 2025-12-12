@@ -9,15 +9,19 @@ import (
 
 func TestNewClient(t *testing.T) {
 	apiKey := "test-api-key"
-	client := NewClient(apiKey)
+	modelName := "gemini-2.5-flash"
+	client := NewClient(apiKey, modelName)
 
 	if client.apiKey != apiKey {
 		t.Errorf("Expected apiKey=%s, got: %s", apiKey, client.apiKey)
 	}
+	if client.modelName != modelName {
+		t.Errorf("Expected modelName=%s, got: %s", modelName, client.modelName)
+	}
 }
 
 func TestTruncateSummary(t *testing.T) {
-	client := NewClient("test-key")
+	client := NewClient("test-key", "gemini-2.5-flash")
 
 	tests := []struct {
 		name     string
@@ -70,7 +74,7 @@ func TestTruncateSummary(t *testing.T) {
 }
 
 func TestGenerateDailySummary_EmptyEvents(t *testing.T) {
-	client := NewClient("test-key")
+	client := NewClient("test-key", "gemini-2.5-flash")
 
 	summary, err := client.GenerateDailySummary([]github.FormattedEvent{})
 	if err != nil {
