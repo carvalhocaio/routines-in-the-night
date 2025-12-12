@@ -62,6 +62,21 @@ func (c *Client) SendDailyReport(message string) error {
 	return c.sendEmbed(embed)
 }
 
+// SendError sends an error message to Discord
+func (c *Client) SendError(err error) error {
+	embed := Embed{
+		Title:       "GitHub Daily Reporter - Error",
+		Description: fmt.Sprintf("Error occurred: %v", err),
+		Color:       0xFF0000, // Red color
+		Timestamp:   time.Now().Format(time.RFC3339),
+		Footer: &EmbedFooter{
+			Text: "GitHub Daily Reporter",
+		},
+	}
+
+	return c.sendEmbed(embed)
+}
+
 // sendEmbed sends an embed to Discord via webhook
 func (c *Client) sendEmbed(embed Embed) error {
 	payload := WebhookPayload{
