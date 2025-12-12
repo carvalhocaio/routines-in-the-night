@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	modelName       = "gemini-2.0-flash-exp"
+	modelName       = "gemini-2.5-flash"
 	maxTokens       = 500
 	temperature     = 1.2
 	maxSummaryChars = 2000 // Discord embed description limit
