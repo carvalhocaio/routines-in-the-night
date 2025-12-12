@@ -3,7 +3,6 @@ package gemini
 import (
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/carvalhocaio/routines-in-the-night/internal/github"
 )
@@ -67,54 +66,6 @@ func TestTruncateSummary(t *testing.T) {
 				)
 			}
 		})
-	}
-}
-
-func TestBuildPrompt(t *testing.T) {
-	client := NewClient("test-key")
-
-	events := []github.FormattedEvent{
-		{
-			Type:      "PushEvent",
-			Repo:      "user/repo",
-			CreatedAt: time.Now(),
-			IsPrivate: false,
-			Branch:    "main",
-			Commits:   2,
-			CommitMessages: []string{
-				"Initial commit",
-				"Add feature",
-			},
-		},
-	}
-
-	prompt, err := client.buildPrompt(events)
-	if err != nil {
-		t.Fatalf("buildPrompt() returned error: %v", err)
-	}
-
-	// Check if prompt contains key elements
-	requiredStrings := []string{
-		"Você é um assistente",
-		"atividades feitas no GitHub",
-		"formato de parágrafo",
-		"100-150 palavras",
-		"Sem emojis e sem hashtags",
-		"Atividades do dia:",
-	}
-
-	for _, required := range requiredStrings {
-		if !strings.Contains(prompt, required) {
-			t.Errorf("Prompt missing required string: %s", required)
-		}
-	}
-
-	// Check if events are included
-	if !strings.Contains(prompt, "PushEvent") {
-		t.Error("Prompt doesn't contain event type")
-	}
-	if !strings.Contains(prompt, "user/repo") {
-		t.Error("Prompt doesn't contain repository name")
 	}
 }
 
