@@ -18,7 +18,7 @@ type Config struct {
 // Load reads configuration from environment variables
 func Load() (*Config, error) {
 	// Try to load .env file (ignore error if a file doesn't exist)
-	_ = godotenv.Load()
+	_ = godotenv.Load() //nolint:errcheck // .env file is optional
 
 	cfg := &Config{
 		GitHubUser:        os.Getenv("GH_USER"),
