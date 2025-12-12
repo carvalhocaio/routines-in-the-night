@@ -17,4 +17,4 @@ REQUISITOS:
 Atividades do dia:
 %s
 
-Gere um texto detalhado e informativo sobre essas atividades de desenvolvimento.`
+Gere um texto detalhado e informativo sobre essas atividades de desenvolvimento.` //nolint:misspell // "informativo" is correct in Portuguese
