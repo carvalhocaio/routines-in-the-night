@@ -103,7 +103,9 @@ func (c *Client) sendEmbed(embed Embed) error {
 	if err != nil {
 		return fmt.Errorf("failed to send request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close() //nolint:errcheck // defer close is best effort
+	}()
 
 	if resp.StatusCode != http.StatusNoContent {
 		return fmt.Errorf(
