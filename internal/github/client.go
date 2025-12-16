@@ -17,6 +17,7 @@ type Client struct {
 	username   string
 	token      string
 	httpClient *http.Client
+	baseURL    string // For testing purposes
 }
 
 // Event represents a GitHub event
@@ -76,6 +77,19 @@ func NewClient(username, token string) *Client {
 		httpClient: &http.Client{
 			Timeout: 30 * time.Second,
 		},
+		baseURL: githubAPIURL,
+	}
+}
+
+// NewClientWithBaseURL creates a new GitHub API client with a custom base URL (for testing)
+func NewClientWithBaseURL(username, token, baseURL string) *Client {
+	return &Client{
+		username: username,
+		token:    token,
+		httpClient: &http.Client{
+			Timeout: 30 * time.Second,
+		},
+		baseURL: baseURL,
 	}
 }
 
@@ -101,7 +115,7 @@ func (c *Client) GetDailyEvents() ([]FormattedEvent, error) {
 
 // fetchUserEvents retrieves events from GitHub API
 func (c *Client) fetchUserEvents() ([]Event, error) {
-	url := fmt.Sprintf("%s/users/%s/events", githubAPIURL, c.username)
+	url := fmt.Sprintf("%s/users/%s/events", c.baseURL, c.username)
 
 	req, err := http.NewRequest(http.MethodGet, url, http.NoBody)
 	if err != nil {

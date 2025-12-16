@@ -17,17 +17,66 @@ const (
 	maxSummaryChars = 4096 // Discord embed description limit (max is 4096)
 )
 
+// GenerativeModel defines the interface for AI model operations
+type GenerativeModel interface {
+	GenerateContent(ctx context.Context, parts ...genai.Part) (*genai.GenerateContentResponse, error)
+	SetTemperature(temp float32)
+	SetMaxOutputTokens(tokens int32)
+}
+
+// GenAIClient defines the interface for the Gemini client
+type GenAIClient interface {
+	GenerativeModel(name string) GenerativeModel
+	Close() error
+}
+
+// genaiClientWrapper wraps the real genai.Client to implement GenAIClient
+type genaiClientWrapper struct {
+	client *genai.Client
+}
+
+func (w *genaiClientWrapper) GenerativeModel(name string) GenerativeModel {
+	return w.client.GenerativeModel(name)
+}
+
+func (w *genaiClientWrapper) Close() error {
+	return w.client.Close()
+}
+
+// ClientFactory creates GenAI clients
+type ClientFactory func(ctx context.Context, apiKey string) (GenAIClient, error)
+
+// defaultClientFactory creates real Gemini clients
+func defaultClientFactory(ctx context.Context, apiKey string) (GenAIClient, error) {
+	client, err := genai.NewClient(ctx, option.WithAPIKey(apiKey))
+	if err != nil {
+		return nil, err
+	}
+	return &genaiClientWrapper{client: client}, nil
+}
+
 // Client handles Gemini API interactions
 type Client struct {
-	apiKey    string
-	modelName string
+	apiKey        string
+	modelName     string
+	clientFactory ClientFactory
 }
 
 // NewClient creates a new Gemini API client
 func NewClient(apiKey, modelName string) *Client {
 	return &Client{
-		apiKey:    apiKey,
-		modelName: modelName,
+		apiKey:        apiKey,
+		modelName:     modelName,
+		clientFactory: defaultClientFactory,
+	}
+}
+
+// NewClientWithFactory creates a new Gemini API client with a custom factory (for testing)
+func NewClientWithFactory(apiKey, modelName string, factory ClientFactory) *Client {
+	return &Client{
+		apiKey:        apiKey,
+		modelName:     modelName,
+		clientFactory: factory,
 	}
 }
 
@@ -42,7 +91,7 @@ func (c *Client) GenerateDailySummary(
 	ctx := context.Background()
 
 	// Initialize Gemini Client
-	client, err := genai.NewClient(ctx, option.WithAPIKey(c.apiKey))
+	client, err := c.clientFactory(ctx, c.apiKey)
 	if err != nil {
 		return "", fmt.Errorf("failed to create Gemini client: %w", err)
 	}
