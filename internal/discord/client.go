@@ -51,7 +51,7 @@ func NewClient(webhookURL string) *Client {
 // SendDailyReport sends the daily GitHub report to Discord
 func (c *Client) SendDailyReport(message string) error {
 	embed := Embed{
-		Title:       "GitHub Daily",
+		Title:       fmt.Sprintf("GitHub Daily - %s", time.Now().Format("02/01/2006")),
 		Description: truncateMessage(message, maxDescriptionLen),
 		Color:       colorBlue,
 		Timestamp:   time.Now().Format(time.RFC3339),

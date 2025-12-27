@@ -98,8 +98,8 @@ func TestSendDailyReport_Success(t *testing.T) {
 		}
 
 		embed := payload.Embeds[0]
-		if embed.Title != "GitHub Daily" {
-			t.Errorf("Expected title 'GitHub Daily', got %s", embed.Title)
+		if !strings.HasPrefix(embed.Title, "GitHub Daily - ") {
+			t.Errorf("Expected title to start with 'GitHub Daily - ', got %s", embed.Title)
 		}
 		if embed.Description != "Test message" {
 			t.Errorf("Expected description 'Test message', got %s", embed.Description)
