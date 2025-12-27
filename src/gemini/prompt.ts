@@ -1,7 +1,4 @@
-package gemini
-
-//nolint:misspell // Portuguese text - "profissional" and "substancial" are correct Portuguese words
-const dailySummaryPromptTemplate = `Você é um assistente técnico que analisa atividades
+export const DAILY_SUMMARY_PROMPT = `Você é um assistente técnico que analisa atividades
 de desenvolvimento no GitHub. Gere um resumo TÉCNICO e DETALHADO em formato de parágrafo.
 
 REQUISITOS OBRIGATÓRIOS:
@@ -29,4 +26,8 @@ Extraia dos eventos:
 Atividades do dia:
 %s
 
-Gere um texto técnico, específico e informativo sobre o trabalho de desenvolvimento realizado.`
+Gere um texto técnico, específico e informativo sobre o trabalho de desenvolvimento realizado.`;
+
+export function buildPrompt(events: string): string {
+  return DAILY_SUMMARY_PROMPT.replace("%s", events);
+}
