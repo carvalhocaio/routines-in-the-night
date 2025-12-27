@@ -1,29 +1,12 @@
-# Binaries for programs and plugins
-*.exe
-*.exe~
-*.dll
-*.so
-*.dylib
+# Dependencies
+node_modules/
 
-# Test binary, built with `go test -c`
-*.test
-
-# Output of the go coverage tool
-*.out
-coverage.txt
-coverage.html
-
-# Dependency directories
-vendor/
-
-# Go workspace file
-go.work
-go.work.sum
+# Bun
+bun.lockb
 
 # Build output
 /bin/
 /dist/
-github-daily-reporter
 
 # Environment variables
 .env
@@ -48,6 +31,3 @@ logs/
 # Temporary files
 tmp/
 temp/
-
-# Binary
-routines-in-the-night
