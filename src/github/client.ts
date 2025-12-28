@@ -115,14 +115,6 @@ export class GitHubClient {
 
       this.updateRateLimitInfo(response);
 
-      // Check if we hit rate limit after the request
-      if (response.status === 403 && this.lastRateLimitInfo?.remaining === 0) {
-        throw new GitHubRateLimitError(
-          `GitHub API rate limit exceeded. Resets at ${this.lastRateLimitInfo.reset.toISOString()}`,
-          this.lastRateLimitInfo.reset
-        );
-      }
-
       return response.json();
     } catch (error) {
       if (error instanceof GitHubRateLimitError) {
