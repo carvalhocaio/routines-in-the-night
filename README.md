@@ -1,14 +1,14 @@
-# GitHub Daily Reporter (Go + Gemini)
+# GitHub Daily Reporter (Bun + Gemini)
 
-A Go application that automatically generates daily summaries of your GitHub activity using Google's Gemini AI and sends them to Discord. Perfect for developers who want to track and share their coding progress.
+A TypeScript application that automatically generates daily summaries of your GitHub activity using Google's Gemini AI and sends them to Discord. Perfect for developers who want to track and share their coding progress.
 
 ## Features
 
 - **Comprehensive Activity Tracking**: Monitors both public and private repository events
-- **AI-Powered Summaries**: Uses Google Gemini 2.0 Flash to generate concise, engaging summaries
+- **AI-Powered Summaries**: Uses Google Gemini to generate concise, engaging summaries
 - **Discord Integration**: Automatically posts daily reports to Discord channels via webhooks
 - **GitHub Actions Automation**: Runs daily at midnight (Brasília time) using GitHub Actions
-- **Clean Architecture**: Well-organized code structure following Go best practices
+- **Robust Error Handling**: Request timeouts, retry logic with exponential backoff
 - **Event Filtering**: Captures activities from the last 24 hours including:
   - Push events with commit details
   - Repository creation and deletion
@@ -18,7 +18,7 @@ A Go application that automatically generates daily summaries of your GitHub act
 
 ## Prerequisites
 
-- Go 1.23 or higher
+- [Bun](https://bun.sh) v1.0 or higher
 - GitHub Personal Access Token
 - Google Gemini API Key
 - Discord Webhook URL
@@ -35,7 +35,7 @@ cd routines-in-the-night
 
 2. **Install dependencies:**
 ```bash
-go mod download
+bun install
 ```
 
 3. **Configure environment variables:**
@@ -78,14 +78,13 @@ Create a GitHub Personal Access Token with the following scopes:
 
 ### Local Execution
 
-Using Make:
 ```bash
-make run
+bun run start
 ```
 
-Or directly:
+Or with watch mode for development:
 ```bash
-go run ./cmd/reporter/main.go
+bun run dev
 ```
 
 ### Automated Execution
@@ -106,97 +105,79 @@ To enable automation:
 
 ```
 .
-├── cmd/
-│   └── reporter/
-│       └── main.go              # Application entry point
-├── internal/
+├── src/
+│   ├── index.ts              # Application entry point
 │   ├── config/
-│   │   └── config.go            # Configuration management
+│   │   └── index.ts          # Configuration management
 │   ├── github/
-│   │   └── client.go            # GitHub API client
+│   │   ├── client.ts         # GitHub API client
+│   │   └── types.ts          # GitHub event types
 │   ├── gemini/
-│   │   └── client.go            # Gemini AI client
-│   └── discord/
-│       └── client.go            # Discord webhook client
+│   │   ├── client.ts         # Gemini AI client
+│   │   └── prompt.ts         # AI prompt template
+│   ├── discord/
+│   │   ├── client.ts         # Discord webhook client
+│   │   └── types.ts          # Discord embed types
+│   └── utils/
+│       └── fetch.ts          # Fetch with retry and timeout
 ├── .github/
 │   └── workflows/
-│       ├── ci.yml                   # CI workflow (test, lint, build)
+│       ├── ci.yml                   # CI workflow (test, lint, typecheck)
 │       └── daily-github-report.yml  # Daily report workflow
-├── .env.sample                  # Environment variables template
-├── .gitignore                   # Git ignore rules
-├── .golangci.yml                # Linter configuration
-├── go.mod                       # Go module definition
-├── go.sum                       # Go module checksums
-├── Makefile                     # Build automation
-└── README.md                    # This file
+├── .env.sample               # Environment variables template
+├── biome.json                # Linter/formatter configuration
+├── package.json              # Project dependencies
+├── tsconfig.json             # TypeScript configuration
+└── README.md                 # This file
 ```
 
-## 🛠️ Development
+## Development
 
-### Available Make Commands
-
-```bash
-make help          # Show available commands
-make build         # Build the application
-make run           # Build and run
-make dev           # Run without building (go run)
-make test          # Run tests
-make coverage      # Generate coverage report
-make clean         # Clean build artifacts
-make format        # Format code
-make lint          # Run linter
-make deps          # Download dependencies
-make tidy          # Tidy go.mod
-make update-deps   # Update dependencies
-make install       # Install binary
-```
-
-### Code Formatting
+### Available Commands
 
 ```bash
-make format
+bun run start      # Run the application
+bun run dev        # Run with watch mode
+bun test           # Run tests
+bun run lint       # Run Biome linter
+bun run format     # Format code with Biome
+bun run check      # Run all Biome checks
+bun run tsc        # Type check
 ```
 
 ### Running Tests
 
 ```bash
-make test
+bun test
 ```
 
-### Linting
+### Linting & Formatting
 
-Install golangci-lint first:
 ```bash
-# macOS
-brew install golangci-lint
-
-# Linux
-curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin
-```
-
-Then run:
-```bash
-make lint
+bun run lint      # Check for issues
+bun run format    # Fix formatting
 ```
 
 ## Architecture
 
 The application follows clean architecture principles with clear separation of concerns:
 
-- **cmd/reporter**: Application entry point and main workflow
-- **internal/config**: Configuration loading and validation
-- **internal/github**: GitHub API integration
-- **internal/gemini**: Gemini AI integration
-- **internal/discord**: Discord webhook integration
+- **src/config**: Configuration loading and validation
+- **src/github**: GitHub API integration with retry logic
+- **src/gemini**: Gemini AI integration for summary generation
+- **src/discord**: Discord webhook integration
+- **src/utils**: Shared utilities (fetch with retry/timeout)
 
-Each package is independent and testable, following Go best practices.
+Each module is independent and testable.
 
 ## How It Works
 
 1. **Event Retrieval**: The GitHub client fetches events from the last 24 hours using the GitHub API
 2. **Event Processing**: Events are filtered and formatted to extract relevant information
-3. **AI Summary Generation**: Gemini AI processes the events and generates a detailed narrative summary (100-150 words)
+3. **AI Summary Generation**: Gemini AI processes the events and generates a detailed technical summary in Portuguese
 4. **Discord Notification**: The summary is sent to Discord as an embedded message with timestamp
+
+If no events are found, a "no activity" message is sent to Discord instead.
 
 ## Event Types Tracked
 
@@ -209,21 +190,18 @@ Each package is independent and testable, following Go best practices.
 ## Error Handling
 
 The application includes comprehensive error handling:
-- API rate limit management
-- Network connection failures
-- Malformed event data processing
-- Discord webhook delivery failures
-- Gemini API errors with fallback messages
-
-All errors are logged and optionally sent to Discord for monitoring.
+- Request timeouts (30s for GitHub/Gemini, 15s for Discord)
+- Retry logic with exponential backoff for transient errors (429, 5xx)
+- Detailed error messages with context
+- Error notifications sent to Discord for monitoring
 
 ## Contributing
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Make your changes following Go best practices
-4. Format your code (`make format`)
-5. Run tests (`make test`)
+3. Make your changes
+4. Format your code (`bun run format`)
+5. Run tests (`bun test`)
 6. Commit your changes (`git commit -m 'Add amazing feature'`)
 7. Push to the branch (`git push origin feature/amazing-feature`)
 8. Open a Pull Request
@@ -237,6 +215,7 @@ This project is open source and available under the MIT License.
 - [Google Gemini AI](https://deepmind.google/technologies/gemini/) for AI-powered summaries
 - [GitHub API](https://docs.github.com/en/rest) for event tracking
 - [Discord Webhooks](https://discord.com/developers/docs/resources/webhook) for notifications
+- [Bun](https://bun.sh) for the fast JavaScript runtime
 
 ## Support
 

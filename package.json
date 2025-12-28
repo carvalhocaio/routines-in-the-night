@@ -1,0 +1,23 @@
+{
+  "name": "routines-in-the-night",
+  "version": "1.0.0",
+  "description": "Daily GitHub activity reporter with AI-powered summaries",
+  "type": "module",
+  "scripts": {
+    "start": "bun run src/index.ts",
+    "dev": "bun --watch src/index.ts",
+    "test": "bun test",
+    "lint": "biome lint .",
+    "format": "biome format --write .",
+    "check": "biome check .",
+    "tsc": "tsc"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.21.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.0",
+    "@types/bun": "latest",
+    "typescript": "^5.9.3"
+  }
+}
