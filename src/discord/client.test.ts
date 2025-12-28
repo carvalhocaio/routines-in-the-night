@@ -61,13 +61,28 @@ describe("DiscordClient", () => {
     expect(payload.embeds[0].title).toBe("GitHub Daily Reporter - Error");
   });
 
+  it("should send no activity report", async () => {
+    const client = new DiscordClient({
+      webhookUrl: `${webhookUrl}/webhook/success`,
+    });
+
+    await client.sendNoActivityReport();
+
+    expect(lastPayload).toBeDefined();
+    const payload = lastPayload as {
+      embeds: Array<{ title: string; description: string; color: number }>;
+    };
+    expect(payload.embeds[0].description).toContain("planejamento e reflexão");
+    expect(payload.embeds[0].color).toBe(0x7289da);
+  });
+
   it("should throw error on webhook failure", async () => {
     const client = new DiscordClient({
       webhookUrl: `${webhookUrl}/webhook/error`,
     });
 
     await expect(client.sendDailyReport("Test")).rejects.toThrow(
-      "Discord webhook error: 400"
+      "Failed to send daily report to Discord"
     );
   });
 });

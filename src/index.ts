@@ -25,13 +25,16 @@ async function run(): Promise<void> {
 
   if (events.length === 0) {
     console.log("No events found in the last 24 hours");
+    console.log("Sending no activity report to Discord...");
+    await discordClient.sendNoActivityReport();
+    console.log("No activity report sent successfully!");
     return;
   }
 
   console.log(`Found ${events.length} events`);
 
   console.log("Generating summary with Gemini...");
-  const eventsJson = JSON.stringify(events, null, 2);
+  const eventsJson = JSON.stringify(events);
   const summary = await geminiClient.generateDailySummary(eventsJson);
 
   console.log("Sending report to Discord...");

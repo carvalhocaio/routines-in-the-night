@@ -1,3 +1,4 @@
+import { FetchError, fetchWithRetry } from "../utils/fetch";
 import type { FormattedEvent, GitHubEvent } from "./types";
 
 const GITHUB_API_URL = "https://api.github.com";
@@ -34,20 +35,29 @@ export class GitHubClient {
   private async fetchUserEvents(): Promise<GitHubEvent[]> {
     const url = `${this.baseUrl}/users/${this.username}/events`;
 
-    const response = await fetch(url, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${this.token}`,
-        Accept: "application/vnd.github.v3+json",
-        "X-GitHub-Api-Version": GITHUB_API_VERSION,
-      },
-    });
+    try {
+      const response = await fetchWithRetry(url, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${this.token}`,
+          Accept: "application/vnd.github.v3+json",
+          "X-GitHub-Api-Version": GITHUB_API_VERSION,
+        },
+        timeout: 30000,
+        maxRetries: 3,
+      });
 
-    if (!response.ok) {
-      throw new Error(`GitHub API error: ${response.status}`);
+      return response.json();
+    } catch (error) {
+      if (error instanceof FetchError) {
+        throw new Error(
+          `Failed to fetch GitHub events for user '${this.username}': ${error.message}`
+        );
+      }
+      throw new Error(
+        `Failed to fetch GitHub events: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
-
-    return response.json();
   }
 
   private formatEvents(events: GitHubEvent[]): FormattedEvent[] {

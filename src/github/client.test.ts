@@ -165,6 +165,8 @@ describe("GitHubClient", () => {
       baseUrl,
     });
 
-    await expect(client.getDailyEvents()).rejects.toThrow("GitHub API error: 401");
+    await expect(client.getDailyEvents()).rejects.toThrow(
+      "Failed to fetch GitHub events for user 'erroruser'"
+    );
   });
 });
