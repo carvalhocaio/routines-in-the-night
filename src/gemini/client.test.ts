@@ -53,6 +53,17 @@ describe("GeminiClient", () => {
       ).rejects.toThrow("Events JSON must be an array");
     });
 
+    it("should throw error for input exceeding size limit", async () => {
+      const client = new GeminiClient({ apiKey: "test-key" });
+      const largeInput = JSON.stringify(
+        Array(10000).fill({ type: "PushEvent", data: "x".repeat(100) })
+      );
+
+      await expect(client.generateDailySummary(largeInput)).rejects.toThrow(
+        "exceeds maximum allowed"
+      );
+    });
+
     it("should accept valid JSON array", async () => {
       const mockGenerateContent = mock(() =>
         Promise.resolve({

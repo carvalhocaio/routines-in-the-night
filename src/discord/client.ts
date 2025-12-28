@@ -3,8 +3,13 @@ import type { DiscordWebhookPayload } from "./types";
 
 const COLOR_BLUE = 0x7289da;
 const COLOR_RED = 0xff0000;
+
+// Strengthened regex: validates Discord webhook URL format more strictly
+// - Must be HTTPS
+// - Webhook ID must be 17-20 digits (snowflake format)
+// - Token must be alphanumeric with dashes/underscores, 60-80 chars
 const DISCORD_WEBHOOK_PATTERN =
-  /^https:\/\/discord\.com\/api\/webhooks\/\d+\/[\w-]+$/;
+  /^https:\/\/(?:(?:canary|ptb)\.)?discord\.com\/api\/webhooks\/\d{17,20}\/[\w-]{60,80}$/;
 
 export class DiscordWebhookError extends Error {
   constructor(message: string) {

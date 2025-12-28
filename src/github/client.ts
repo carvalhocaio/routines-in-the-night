@@ -4,6 +4,17 @@ import type { FormattedEvent, GitHubEvent } from "./types";
 const GITHUB_API_URL = "https://api.github.com";
 const GITHUB_API_VERSION = "2022-11-28";
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+const RATE_LIMIT_THRESHOLD = 100;
+
+export class GitHubRateLimitError extends Error {
+  constructor(
+    message: string,
+    public resetAt: Date
+  ) {
+    super(message);
+    this.name = "GitHubRateLimitError";
+  }
+}
 
 export interface GitHubClientOptions {
   username: string;
@@ -39,8 +50,11 @@ export class GitHubClient {
   /**
    * Fetches GitHub events from the last 24 hours.
    * @returns Array of formatted events
+   * @throws {GitHubRateLimitError} If rate limit is exceeded or too low to proceed
    */
   async getDailyEvents(): Promise<FormattedEvent[]> {
+    this.checkRateLimitBeforeRequest();
+
     const events = await this.fetchUserEvents();
     const cutoffTime = Date.now() - ONE_DAY_MS;
 
@@ -57,6 +71,31 @@ export class GitHubClient {
    */
   getRateLimitInfo(): RateLimitInfo | null {
     return this.lastRateLimitInfo;
+  }
+
+  /**
+   * Checks if we should proceed with a request based on rate limit info.
+   * @throws {GitHubRateLimitError} If rate limit is too low
+   */
+  private checkRateLimitBeforeRequest(): void {
+    if (this.lastRateLimitInfo) {
+      const { remaining, reset } = this.lastRateLimitInfo;
+
+      // If we're out of requests and reset is in the future, throw
+      if (remaining === 0 && reset.getTime() > Date.now()) {
+        throw new GitHubRateLimitError(
+          `GitHub API rate limit exceeded. Resets at ${reset.toISOString()}`,
+          reset
+        );
+      }
+
+      // Warn if approaching limit
+      if (remaining < RATE_LIMIT_THRESHOLD && remaining > 0) {
+        console.warn(
+          `GitHub API rate limit warning: ${remaining} requests remaining. Resets at ${reset.toISOString()}`
+        );
+      }
+    }
   }
 
   private async fetchUserEvents(): Promise<GitHubEvent[]> {
@@ -76,8 +115,19 @@ export class GitHubClient {
 
       this.updateRateLimitInfo(response);
 
+      // Check if we hit rate limit after the request
+      if (response.status === 403 && this.lastRateLimitInfo?.remaining === 0) {
+        throw new GitHubRateLimitError(
+          `GitHub API rate limit exceeded. Resets at ${this.lastRateLimitInfo.reset.toISOString()}`,
+          this.lastRateLimitInfo.reset
+        );
+      }
+
       return response.json();
     } catch (error) {
+      if (error instanceof GitHubRateLimitError) {
+        throw error;
+      }
       if (error instanceof FetchError) {
         throw new Error(
           `Failed to fetch GitHub events for user '${this.username}': ${error.message}`
@@ -100,12 +150,6 @@ export class GitHubClient {
         remaining: Number.parseInt(remaining, 10),
         reset: new Date(Number.parseInt(reset, 10) * 1000),
       };
-
-      if (this.lastRateLimitInfo.remaining < 100) {
-        console.warn(
-          `GitHub API rate limit warning: ${this.lastRateLimitInfo.remaining}/${this.lastRateLimitInfo.limit} requests remaining. Resets at ${this.lastRateLimitInfo.reset.toISOString()}`
-        );
-      }
     }
   }
 

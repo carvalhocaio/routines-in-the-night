@@ -5,7 +5,16 @@ describe("DiscordClient", () => {
   describe("webhook URL validation", () => {
     it("should accept valid Discord webhook URL", () => {
       const client = new DiscordClient({
-        webhookUrl: "https://discord.com/api/webhooks/1234567890/abcdefghijklmnop",
+        webhookUrl:
+          "https://discord.com/api/webhooks/12345678901234567890/abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ12345678",
+      });
+      expect(client).toBeDefined();
+    });
+
+    it("should accept canary Discord webhook URL", () => {
+      const client = new DiscordClient({
+        webhookUrl:
+          "https://canary.discord.com/api/webhooks/12345678901234567890/abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ12345678",
       });
       expect(client).toBeDefined();
     });
@@ -22,6 +31,14 @@ describe("DiscordClient", () => {
       expect(() => {
         new DiscordClient({
           webhookUrl: "http://discord.com/api/webhooks/123/abc",
+        });
+      }).toThrow(DiscordWebhookError);
+    });
+
+    it("should reject webhook with short token", () => {
+      expect(() => {
+        new DiscordClient({
+          webhookUrl: "https://discord.com/api/webhooks/12345678901234567890/short",
         });
       }).toThrow(DiscordWebhookError);
     });

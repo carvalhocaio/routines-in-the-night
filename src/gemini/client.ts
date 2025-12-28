@@ -2,6 +2,8 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { buildPrompt } from "./prompt";
 
 const MAX_SUMMARY_CHARS = 4096;
+const MAX_INPUT_SIZE_BYTES = 100000; // 100KB limit for input
+const DEFAULT_TEMPERATURE = 0.7; // Lower temperature for more consistent output
 
 export class GeminiValidationError extends Error {
   constructor(message: string) {
@@ -13,6 +15,7 @@ export class GeminiValidationError extends Error {
 export interface GeminiClientOptions {
   apiKey: string;
   model?: string;
+  temperature?: number;
 }
 
 /**
@@ -21,21 +24,23 @@ export interface GeminiClientOptions {
 export class GeminiClient {
   private genAI: GoogleGenerativeAI;
   private modelName: string;
+  private temperature: number;
 
   /**
    * Creates a new Gemini client.
-   * @param options - Configuration options including API key and optional model name
+   * @param options - Configuration options including API key, optional model name, and temperature
    */
   constructor(options: GeminiClientOptions) {
     this.genAI = new GoogleGenerativeAI(options.apiKey);
     this.modelName = options.model || "gemini-2.5-flash";
+    this.temperature = options.temperature ?? DEFAULT_TEMPERATURE;
   }
 
   /**
    * Generates a daily summary from GitHub events.
    * @param eventsJson - JSON string containing the GitHub events
    * @returns The AI-generated summary text, truncated to fit Discord's limits
-   * @throws {GeminiValidationError} If the input is not valid JSON
+   * @throws {GeminiValidationError} If the input is not valid JSON or exceeds size limits
    */
   async generateDailySummary(eventsJson: string): Promise<string> {
     this.validateJsonInput(eventsJson);
@@ -43,7 +48,7 @@ export class GeminiClient {
     const model = this.genAI.getGenerativeModel({
       model: this.modelName,
       generationConfig: {
-        temperature: 1.2,
+        temperature: this.temperature,
         maxOutputTokens: 8192,
       },
     });
@@ -57,13 +62,20 @@ export class GeminiClient {
   }
 
   /**
-   * Validates that the input is valid JSON.
+   * Validates that the input is valid JSON and within size limits.
    * @param input - The input string to validate
-   * @throws {GeminiValidationError} If the input is not valid JSON
+   * @throws {GeminiValidationError} If the input is not valid JSON or exceeds limits
    */
   private validateJsonInput(input: string): void {
     if (!input || input.trim() === "") {
       throw new GeminiValidationError("Events JSON cannot be empty");
+    }
+
+    const inputSizeBytes = new TextEncoder().encode(input).length;
+    if (inputSizeBytes > MAX_INPUT_SIZE_BYTES) {
+      throw new GeminiValidationError(
+        `Input size (${inputSizeBytes} bytes) exceeds maximum allowed (${MAX_INPUT_SIZE_BYTES} bytes)`
+      );
     }
 
     try {

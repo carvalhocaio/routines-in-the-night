@@ -1,11 +1,13 @@
 const DEFAULT_TIMEOUT = 30000;
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000;
+const MAX_RETRY_DELAY = 10000;
 
 export interface FetchWithRetryOptions extends RequestInit {
   timeout?: number;
   maxRetries?: number;
   retryDelay?: number;
+  maxRetryDelay?: number;
 }
 
 export class FetchError extends Error {
@@ -27,6 +29,13 @@ async function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+/**
+ * Fetches a URL with automatic retry and timeout handling.
+ * @param url - The URL to fetch
+ * @param options - Fetch options including timeout, retry settings
+ * @returns The response if successful
+ * @throws {FetchError} If all retries fail or a non-retryable error occurs
+ */
 export async function fetchWithRetry(
   url: string,
   options: FetchWithRetryOptions = {}
@@ -35,6 +44,7 @@ export async function fetchWithRetry(
     timeout = DEFAULT_TIMEOUT,
     maxRetries = MAX_RETRIES,
     retryDelay = RETRY_DELAY,
+    maxRetryDelay = MAX_RETRY_DELAY,
     ...fetchOptions
   } = options;
 
@@ -54,7 +64,7 @@ export async function fetchWithRetry(
 
       if (!response.ok) {
         if (isRetryableStatus(response.status) && attempt < maxRetries) {
-          const delay = retryDelay * 2 ** attempt;
+          const delay = Math.min(retryDelay * 2 ** attempt, maxRetryDelay);
           await sleep(delay);
           continue;
         }
@@ -81,7 +91,7 @@ export async function fetchWithRetry(
       }
 
       if (attempt < maxRetries) {
-        const delay = retryDelay * 2 ** attempt;
+        const delay = Math.min(retryDelay * 2 ** attempt, maxRetryDelay);
         await sleep(delay);
       }
     }
