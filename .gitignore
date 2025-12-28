@@ -8,6 +8,9 @@ bun.lockb
 /bin/
 /dist/
 
+# Coverage
+/coverage/
+
 # Environment variables
 .env
 .env.local

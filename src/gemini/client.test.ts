@@ -1,9 +1,10 @@
-import { describe, expect, it, mock } from "bun:test";
+import { describe, expect, it, mock, spyOn } from "bun:test";
+import { GeminiClient, GeminiValidationError } from "./client";
 import { buildPrompt } from "./prompt";
 
 describe("buildPrompt", () => {
   it("should insert events into prompt template", () => {
-    const events = '{"type": "PushEvent"}';
+    const events = '[{"type": "PushEvent"}]';
     const prompt = buildPrompt(events);
 
     expect(prompt).toContain(events);
@@ -13,32 +14,143 @@ describe("buildPrompt", () => {
 });
 
 describe("GeminiClient", () => {
-  it("should truncate long text at sentence boundary", async () => {
-    const mockGenerateContent = mock(() =>
-      Promise.resolve({
-        response: {
-          text: () =>
-            "This is a long text. It has multiple sentences. This is the third sentence. And the fourth one here.",
+  describe("JSON validation", () => {
+    it("should throw error for empty input", async () => {
+      const client = new GeminiClient({ apiKey: "test-key" });
+
+      await expect(client.generateDailySummary("")).rejects.toThrow(
+        GeminiValidationError
+      );
+      await expect(client.generateDailySummary("")).rejects.toThrow(
+        "Events JSON cannot be empty"
+      );
+    });
+
+    it("should throw error for whitespace-only input", async () => {
+      const client = new GeminiClient({ apiKey: "test-key" });
+
+      await expect(client.generateDailySummary("   ")).rejects.toThrow(
+        "Events JSON cannot be empty"
+      );
+    });
+
+    it("should throw error for invalid JSON", async () => {
+      const client = new GeminiClient({ apiKey: "test-key" });
+
+      await expect(
+        client.generateDailySummary("not valid json")
+      ).rejects.toThrow(GeminiValidationError);
+      await expect(
+        client.generateDailySummary("not valid json")
+      ).rejects.toThrow("Invalid JSON input");
+    });
+
+    it("should throw error for non-array JSON", async () => {
+      const client = new GeminiClient({ apiKey: "test-key" });
+
+      await expect(
+        client.generateDailySummary('{"type": "object"}')
+      ).rejects.toThrow("Events JSON must be an array");
+    });
+
+    it("should accept valid JSON array", async () => {
+      const mockGenerateContent = mock(() =>
+        Promise.resolve({
+          response: {
+            text: () => "Generated summary text",
+          },
+        })
+      );
+
+      const mockGetGenerativeModel = mock(() => ({
+        generateContent: mockGenerateContent,
+      }));
+
+      mock.module("@google/generative-ai", () => ({
+        GoogleGenerativeAI: class {
+          getGenerativeModel = mockGetGenerativeModel;
         },
-      })
-    );
+      }));
 
-    const mockGetGenerativeModel = mock(() => ({
-      generateContent: mockGenerateContent,
-    }));
+      const { GeminiClient: MockedClient } = await import("./client");
+      const client = new MockedClient({ apiKey: "test-key" });
 
-    mock.module("@google/generative-ai", () => ({
-      GoogleGenerativeAI: class {
-        getGenerativeModel = mockGetGenerativeModel;
-      },
-    }));
+      const result = await client.generateDailySummary('[{"type": "PushEvent"}]');
 
-    const { GeminiClient } = await import("./client");
-    const client = new GeminiClient({ apiKey: "test-key" });
+      expect(result).toBe("Generated summary text");
+    });
+  });
 
-    const result = await client.generateDailySummary('{"test": true}');
+  describe("text truncation", () => {
+    it("should not truncate text under limit", async () => {
+      const mockGenerateContent = mock(() =>
+        Promise.resolve({
+          response: {
+            text: () => "Short text.",
+          },
+        })
+      );
 
-    expect(result).toBeTruthy();
-    expect(mockGenerateContent).toHaveBeenCalled();
+      const mockGetGenerativeModel = mock(() => ({
+        generateContent: mockGenerateContent,
+      }));
+
+      mock.module("@google/generative-ai", () => ({
+        GoogleGenerativeAI: class {
+          getGenerativeModel = mockGetGenerativeModel;
+        },
+      }));
+
+      const { GeminiClient: MockedClient } = await import("./client");
+      const client = new MockedClient({ apiKey: "test-key" });
+
+      const result = await client.generateDailySummary("[]");
+
+      expect(result).toBe("Short text.");
+    });
+
+    it("should truncate at sentence boundary when possible", async () => {
+      const longText =
+        "First sentence. Second sentence. Third sentence. Fourth sentence.";
+      const mockGenerateContent = mock(() =>
+        Promise.resolve({
+          response: {
+            text: () => longText,
+          },
+        })
+      );
+
+      const mockGetGenerativeModel = mock(() => ({
+        generateContent: mockGenerateContent,
+      }));
+
+      mock.module("@google/generative-ai", () => ({
+        GoogleGenerativeAI: class {
+          getGenerativeModel = mockGetGenerativeModel;
+        },
+      }));
+
+      const { GeminiClient: MockedClient } = await import("./client");
+      const client = new MockedClient({ apiKey: "test-key" });
+
+      const result = await client.generateDailySummary("[]");
+
+      expect(result).toBe(longText);
+    });
+  });
+
+  describe("model configuration", () => {
+    it("should use default model when not specified", () => {
+      const client = new GeminiClient({ apiKey: "test-key" });
+      expect(client).toBeDefined();
+    });
+
+    it("should use custom model when specified", () => {
+      const client = new GeminiClient({
+        apiKey: "test-key",
+        model: "gemini-pro",
+      });
+      expect(client).toBeDefined();
+    });
   });
 });

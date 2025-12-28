@@ -3,6 +3,7 @@ import type { FormattedEvent, GitHubEvent } from "./types";
 
 const GITHUB_API_URL = "https://api.github.com";
 const GITHUB_API_VERSION = "2022-11-28";
+const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
 export interface GitHubClientOptions {
   username: string;
@@ -10,26 +11,52 @@ export interface GitHubClientOptions {
   baseUrl?: string;
 }
 
+export interface RateLimitInfo {
+  limit: number;
+  remaining: number;
+  reset: Date;
+}
+
+/**
+ * Client for interacting with the GitHub API.
+ */
 export class GitHubClient {
   private username: string;
   private token: string;
   private baseUrl: string;
+  private lastRateLimitInfo: RateLimitInfo | null = null;
 
+  /**
+   * Creates a new GitHub client.
+   * @param options - Configuration options including username, token, and optional base URL
+   */
   constructor(options: GitHubClientOptions) {
     this.username = options.username;
     this.token = options.token;
     this.baseUrl = options.baseUrl || GITHUB_API_URL;
   }
 
+  /**
+   * Fetches GitHub events from the last 24 hours.
+   * @returns Array of formatted events
+   */
   async getDailyEvents(): Promise<FormattedEvent[]> {
     const events = await this.fetchUserEvents();
-    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const cutoffTime = Date.now() - ONE_DAY_MS;
 
     const recentEvents = events.filter(
-      (event) => new Date(event.created_at) > yesterday
+      (event) => new Date(event.created_at).getTime() > cutoffTime
     );
 
     return this.formatEvents(recentEvents);
+  }
+
+  /**
+   * Returns the rate limit information from the last API request.
+   * @returns Rate limit info or null if no request has been made
+   */
+  getRateLimitInfo(): RateLimitInfo | null {
+    return this.lastRateLimitInfo;
   }
 
   private async fetchUserEvents(): Promise<GitHubEvent[]> {
@@ -47,6 +74,8 @@ export class GitHubClient {
         maxRetries: 3,
       });
 
+      this.updateRateLimitInfo(response);
+
       return response.json();
     } catch (error) {
       if (error instanceof FetchError) {
@@ -57,6 +86,26 @@ export class GitHubClient {
       throw new Error(
         `Failed to fetch GitHub events: ${error instanceof Error ? error.message : String(error)}`
       );
+    }
+  }
+
+  private updateRateLimitInfo(response: Response): void {
+    const limit = response.headers.get("X-RateLimit-Limit");
+    const remaining = response.headers.get("X-RateLimit-Remaining");
+    const reset = response.headers.get("X-RateLimit-Reset");
+
+    if (limit && remaining && reset) {
+      this.lastRateLimitInfo = {
+        limit: Number.parseInt(limit, 10),
+        remaining: Number.parseInt(remaining, 10),
+        reset: new Date(Number.parseInt(reset, 10) * 1000),
+      };
+
+      if (this.lastRateLimitInfo.remaining < 100) {
+        console.warn(
+          `GitHub API rate limit warning: ${this.lastRateLimitInfo.remaining}/${this.lastRateLimitInfo.limit} requests remaining. Resets at ${this.lastRateLimitInfo.reset.toISOString()}`
+        );
+      }
     }
   }
 

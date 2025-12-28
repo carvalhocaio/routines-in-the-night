@@ -3,18 +3,46 @@ import type { DiscordWebhookPayload } from "./types";
 
 const COLOR_BLUE = 0x7289da;
 const COLOR_RED = 0xff0000;
+const DISCORD_WEBHOOK_PATTERN =
+  /^https:\/\/discord\.com\/api\/webhooks\/\d+\/[\w-]+$/;
+
+export class DiscordWebhookError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "DiscordWebhookError";
+  }
+}
 
 export interface DiscordClientOptions {
   webhookUrl: string;
+  /** Skip URL validation (for testing only) */
+  skipValidation?: boolean;
 }
 
+/**
+ * Client for sending messages to Discord via webhooks.
+ */
 export class DiscordClient {
   private webhookUrl: string;
 
+  /**
+   * Creates a new Discord client.
+   * @param options - Configuration options including the webhook URL
+   * @throws {DiscordWebhookError} If the webhook URL is invalid
+   */
   constructor(options: DiscordClientOptions) {
+    if (!options.skipValidation && !this.isValidWebhookUrl(options.webhookUrl)) {
+      throw new DiscordWebhookError(
+        "Invalid Discord webhook URL format. Expected: https://discord.com/api/webhooks/{id}/{token}"
+      );
+    }
     this.webhookUrl = options.webhookUrl;
   }
 
+  /**
+   * Sends a daily activity report to Discord.
+   * @param summary - The AI-generated summary text
+   */
   async sendDailyReport(summary: string): Promise<void> {
     const now = new Date();
     const title = `GitHub Daily - ${now.toLocaleDateString("pt-BR")}`;
@@ -36,6 +64,9 @@ export class DiscordClient {
     await this.sendWebhook(payload, "daily report");
   }
 
+  /**
+   * Sends a no-activity report when no GitHub events are found.
+   */
   async sendNoActivityReport(): Promise<void> {
     const now = new Date();
     const title = `GitHub Daily - ${now.toLocaleDateString("pt-BR")}`;
@@ -58,6 +89,10 @@ export class DiscordClient {
     await this.sendWebhook(payload, "no activity report");
   }
 
+  /**
+   * Sends an error notification to Discord.
+   * @param error - The error message to send
+   */
   async sendError(error: string): Promise<void> {
     const now = new Date();
 
@@ -76,6 +111,10 @@ export class DiscordClient {
     };
 
     await this.sendWebhook(payload, "error notification");
+  }
+
+  private isValidWebhookUrl(url: string): boolean {
+    return DISCORD_WEBHOOK_PATTERN.test(url);
   }
 
   private async sendWebhook(
